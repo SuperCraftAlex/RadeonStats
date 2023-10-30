@@ -1,14 +1,10 @@
-import com.googlecode.lanterna.SGR
 import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
-import com.googlecode.lanterna.TextColor
-import com.googlecode.lanterna.graphics.SimpleTheme
 import com.googlecode.lanterna.gui2.*
 import com.googlecode.lanterna.screen.TerminalScreen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import components.Graph
 import components.HorizontalBar
-import components.VerticalBar
 import java.util.*
 import kotlin.math.max
 import kotlin.system.exitProcess
@@ -93,7 +89,9 @@ fun main(argsIn: Array<String>) {
     dataInit += pciInfo(bus)
     val driver = (dataInit[StatTypes.DRIVER]!!.first() as StringData).value
     dataInit += sensorsInfo(driver, bus)
-    dataInit += radeontopInfo(bus)
+    runCatching {
+        dataInit += radeontopInfo(bus)
+    }
 
     val win2 = BasicWindow()
     val panel = Panel()
