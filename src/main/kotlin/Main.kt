@@ -1,10 +1,15 @@
 import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
+import com.googlecode.lanterna.TextColor
+import com.googlecode.lanterna.graphics.SimpleTheme
+import com.googlecode.lanterna.graphics.Theme
+import com.googlecode.lanterna.graphics.ThemeDefinition
 import com.googlecode.lanterna.gui2.*
 import com.googlecode.lanterna.screen.TerminalScreen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
 import components.Graph
 import components.HorizontalBar
+import components.InteractableGraph
 import java.util.*
 import kotlin.math.max
 import kotlin.system.exitProcess
@@ -84,6 +89,21 @@ fun main(argsIn: Array<String>) {
     val gpu = win.selected
         ?: exit(130)
 
+    val theme = SimpleTheme.makeTheme(
+        true,
+        TextColor.ANSI.BLACK,
+        TextColor.ANSI.WHITE,
+        TextColor.ANSI.GREEN,
+        TextColor.ANSI.WHITE,
+        TextColor.ANSI.BLUE,
+        TextColor.ANSI.WHITE,
+        TextColor.RGB(173, 173, 173)
+    )
+
+    val percentCProc = { it: Pair<Long, Number> ->
+        "At C: ${it.second}%"
+    }
+
     val bus = gpu.getBusID()
     val dataInit = createGPUData()
     dataInit += pciInfo(bus)
@@ -101,11 +121,12 @@ fun main(argsIn: Array<String>) {
         (screen.terminalSize.rows / 2.4).toInt()
     )
 
-    val gpuUsageGraph = Graph(
+    val gpuUsageGraph = InteractableGraph(
         ArrayDeque(size.columns),
         0,
         100,
-        sizeIn = size
+        sizeIn = size,
+        currentProcessor = percentCProc
     )
     val gpuUsagePanel = Panel()
     gpuUsagePanel.layoutManager = LinearLayout(Direction.VERTICAL)
@@ -114,12 +135,12 @@ fun main(argsIn: Array<String>) {
     gpuUsagePanel += gpuUsageGraph
     panel += gpuUsagePanel.withBorder(Borders.singleLine("Usage"))
 
-    val gpuTempGraph = Graph(
+    val gpuTempGraph = InteractableGraph(
         ArrayDeque(size.columns),
         0,
         100,
         sizeIn = size
-    )
+    ) { "At C: ${it.second}°C" }
     (sensorsInfo(driver, bus)[StatTypes.JUNCTION]?.firstOrNull() as? TemperatureData)?.input?.let {
         gpuTempGraph.max = it
     }
@@ -140,11 +161,12 @@ fun main(argsIn: Array<String>) {
     val vramUsageLabel = Label("0mb / 0mb")
     vramUsagePanel += vramUsageLabel
     vramUsagePanel += vramUsageBar
-    val vramClockGraph = Graph(
+    val vramClockGraph = InteractableGraph(
         ArrayDeque(size.columns),
         0,
         100,
-        sizeIn = size mulRows 0.4
+        sizeIn = size mulRows 0.4,
+        currentProcessor = percentCProc
     )
     val vramClockPanel = Panel()
     vramClockPanel.layoutManager = LinearLayout(Direction.VERTICAL)
@@ -155,14 +177,17 @@ fun main(argsIn: Array<String>) {
     vramPanel.layoutManager = LinearLayout(Direction.VERTICAL)
     vramPanel += vramUsagePanel.withBorder(Borders.singleLine("VRAM Usage"))
     vramPanel += vramClockPanel.withBorder(Borders.singleLine("VRAM Clock"))
+    val advancedButton = Button("Advanced")
+    vramPanel += advancedButton
     panel += vramPanel
 
     val gpuClockLabel = Label("0mhz / 0mhz")
-    val gpuClockGraph = Graph(
+    val gpuClockGraph = InteractableGraph(
         ArrayDeque(size.columns),
         0,
         100,
-        sizeIn = size mulRows 0.4
+        sizeIn = size mulRows 0.4,
+        currentProcessor = percentCProc
     )
     val gpuClockPanel = Panel()
     gpuClockPanel.layoutManager = LinearLayout(Direction.VERTICAL)
@@ -183,6 +208,8 @@ fun main(argsIn: Array<String>) {
     rightBottomPanel += Label("Rev. ${dataInit[StatTypes.REVISION]?.first()?.toString() ?: "Unknown"}")
     rightBottomPanel += Label("$driver / ${dataInit[StatTypes.MODULE]?.first()?.toString() ?: "Unknown"}")
     panel += rightBottomPanel
+
+    panel.theme = theme
 
     win2.component = panel
     win2.setCloseWindowWithEscape(true)
