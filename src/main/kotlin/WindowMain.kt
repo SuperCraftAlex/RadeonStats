@@ -158,8 +158,6 @@ class WindowMain(
         timer.scheduleAtFixedRate(object: TimerTask() { override fun run() = task() }, 0, 200)
 
         advancedButton.addListener {
-            gui.removeWindow(this)
-            pause()
             gui.addWindowAndWait(WindowAdvanced(theme, dataInit, screen, bus, driver, gui, this))
         }
     }
@@ -167,16 +165,6 @@ class WindowMain(
     override fun close() {
         timer.cancel()
         super.close()
-    }
-
-    fun pause() {
-        timer.cancel()
-        timer.purge()
-    }
-
-    fun unpause() {
-        timer = Timer()
-        timer.scheduleAtFixedRate(object: TimerTask() { override fun run() = task() }, 0, 200)
     }
 
 }

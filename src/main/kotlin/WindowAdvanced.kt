@@ -92,8 +92,6 @@ class WindowAdvanced(
 
         backBtn.addListener {
             gui.removeWindow(this)
-            parent.unpause()
-            gui.addWindowAndWait(parent)
         }
     }
 
