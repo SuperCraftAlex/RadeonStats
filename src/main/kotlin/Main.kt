@@ -2,15 +2,9 @@ import com.googlecode.lanterna.TerminalPosition
 import com.googlecode.lanterna.TerminalSize
 import com.googlecode.lanterna.TextColor
 import com.googlecode.lanterna.graphics.SimpleTheme
-import com.googlecode.lanterna.graphics.Theme
-import com.googlecode.lanterna.gui2.*
-import com.googlecode.lanterna.screen.Screen
+import com.googlecode.lanterna.gui2.MultiWindowTextGUI
 import com.googlecode.lanterna.screen.TerminalScreen
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory
-import components.HorizontalBar
-import components.InteractableGraph
-import java.util.*
-import kotlin.math.max
 import kotlin.system.exitProcess
 
 fun TerminalSize.ensureBounds(bounds: TerminalSize): TerminalSize {
@@ -25,44 +19,6 @@ fun TerminalSize.center(size: TerminalSize): TerminalPosition {
     val y = (this.rows - size.rows) / 2
 
     return TerminalPosition(x, y)
-    // return TerminalPosition(columns / 2, rows / 2)
-}
-
-class GuiGPUSelect(
-    gpus: Array<LshwData>,
-    terminalSize: TerminalSize
-): BasicWindow() {
-
-    var selected: LshwData? = null
-
-    private val selector: ActionListBox
-
-    init {
-        setTitle("Select GPU")
-
-        setCloseWindowWithEscape(true)
-
-        var maxWidth = 4 // "Exit".length
-        selector = ActionListBox()
-        gpus.sortBy {
-            it.physid.toInt()
-        }
-        gpus.sortBy {
-            it.isCurrentGPU()
-        }
-        gpus.forEach { gpu ->
-            maxWidth = max(maxWidth, gpu.product.length)
-            selector.addItem(gpu.product) {
-                selected = gpu
-                close()
-            }
-        }
-        selector.size = TerminalSize(maxWidth, gpus.size + 1).ensureBounds(terminalSize)
-        selector.addItem("Exit") { close() }
-        component = selector
-        position = terminalSize.center(selector.size)
-    }
-
 }
 
 fun main(argsIn: Array<String>) {
@@ -83,7 +39,7 @@ fun main(argsIn: Array<String>) {
 
     screen.startScreen()
 
-    val win = GuiGPUSelect(lshwFetch(), screen.terminalSize)
+    val win = WindowGPUSelect(lshwFetch(), screen.terminalSize)
     gui.addWindowAndWait(win)
     val gpu = win.selected
         ?: exit(130)
