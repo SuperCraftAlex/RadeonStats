@@ -43,7 +43,7 @@ enum class StatTypes(
     ;
 
     override fun toString(): String =
-        this.name.lowercase()
+        this.name.lowercase().replace('_', ' ')
 }
 
 abstract class Data
