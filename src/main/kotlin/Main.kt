@@ -30,7 +30,7 @@ fun main(argsIn: Array<String>) {
         println("  headless - headless mode")
         println("  swing - swing mode")
         println("  awt - awt mode")
-        println("  jna - jna mode")
+        println("  telnet - telnet mode (specify port with -port)")
         exitProcess(0)
     }
     val mode = args["-m"]?.firstOrNull() ?: "default"
@@ -40,7 +40,9 @@ fun main(argsIn: Array<String>) {
             "headless" -> DefaultTerminalFactory().createHeadlessTerminal()
             "swing" -> DefaultTerminalFactory().createSwingTerminal()
             "awt" -> DefaultTerminalFactory().createAWTTerminal()
-            "jna" -> DefaultTerminalFactory().createTelnetTerminal()
+            "telnet" -> DefaultTerminalFactory().also {
+                it.setTelnetPort(args["-port"]?.firstOrNull()?.toIntOrNull() ?: 23)
+            }.createTelnetTerminal()
             else -> throw IllegalArgumentException("Unknown mode $mode")
         }
     )

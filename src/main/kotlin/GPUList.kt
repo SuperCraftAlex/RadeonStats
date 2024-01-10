@@ -49,6 +49,7 @@ fun lshwFetch(hwclass: String = "display"): Array<LshwData> {
         val data = Gson().fromJson(json, Array<LshwData>::class.java)
         return data
     } catch (e: Exception) {
+        println("LSHW not found! To see your device, please install LSHW.")
         return emptyArray()
     }
 }

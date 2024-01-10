@@ -181,73 +181,81 @@ operator fun GPUData.plus(other: GPUData): GPUData =
         .toMap()
 
 fun sensorsInfo(name: String, bus: Int): GPUData {
-    checkInstalled("sensors")
-    val cmd = "sensors -A -u $name-pci-${bus.asBusId()}00"
-    val process = Runtime.getRuntime().exec(cmd)
-    process.waitFor()
-    if (process.exitValue() != 0) {
-        throw Exception("sensors exited with code ${process.exitValue()}")
-    }
-    val result = process.inputStream.bufferedReader().readLines().drop(1)
-    var key: StatTypes = StatTypes.NONE
-    val data = mutableMapOf<StatTypes, MutableList<String>>()
-    for (line in result) {
-        val trimmed = line.trim()
-        if (trimmed.isEmpty()) {
-            continue
+    try {
+        checkInstalled("sensors")
+        val cmd = "sensors -A -u $name-pci-${bus.asBusId()}00"
+        val process = Runtime.getRuntime().exec(cmd)
+        process.waitFor()
+        if (process.exitValue() != 0) {
+            throw Exception("sensors exited with code ${process.exitValue()}")
         }
-        if (line.startsWith("  ")) {
-            data[key]!! += trimmed
-        } else {
-            val keys = trimmed.substringBefore(':')
-            key = StatTypes.entries.find { it.sensors == keys }
-                ?: StatTypes.NONE
-            data[key] = mutableListOf()
+        val result = process.inputStream.bufferedReader().readLines().drop(1)
+        var key: StatTypes = StatTypes.NONE
+        val data = mutableMapOf<StatTypes, MutableList<String>>()
+        for (line in result) {
+            val trimmed = line.trim()
+            if (trimmed.isEmpty()) {
+                continue
+            }
+            if (line.startsWith("  ")) {
+                data[key]!! += trimmed
+            } else {
+                val keys = trimmed.substringBefore(':')
+                key = StatTypes.entries.find { it.sensors == keys }
+                    ?: StatTypes.NONE
+                data[key] = mutableListOf()
+            }
         }
-    }
-    val out = mutableMapOf<StatTypes, MutableList<Data>>()
-    data.forEach { entry ->
-        if (entry.value.isEmpty())
-            return@forEach
+        val out = mutableMapOf<StatTypes, MutableList<Data>>()
+        data.forEach { entry ->
+            if (entry.value.isEmpty())
+                return@forEach
 
-        val first = entry.value.first()
-        val prefix = first.substring(0, first.find { it.isDigit() }?.let { first.indexOf(it) } ?: first.length)
+            val first = entry.value.first()
+            val prefix = first.substring(0, first.find { it.isDigit() }?.let { first.indexOf(it) } ?: first.length)
 
-        val value = when (prefix) {
-            "in" -> VoltageData(first.split(':')[1].toDouble())
-            "temp" -> {
-                val values = entry.value.map { it.split(':')[1].toDouble() }
-                // ignore values[2] (crit_hyst)
-                TemperatureData(
-                    values[0],
-                    values.getOrNull(1)
-                        ?: Int.MAX_VALUE,
-                    values.getOrNull(3)
-                        ?: Int.MAX_VALUE
-                )
+            val value = when (prefix) {
+                "in" -> VoltageData(first.split(':')[1].toDouble())
+                "temp" -> {
+                    val values = entry.value.map { it.split(':')[1].toDouble() }
+                    // ignore values[2] (crit_hyst)
+                    TemperatureData(
+                        values[0],
+                        values.getOrNull(1)
+                            ?: Int.MAX_VALUE,
+                        values.getOrNull(3)
+                            ?: Int.MAX_VALUE
+                    )
+                }
+
+                "fan" -> {
+                    val values = entry.value.map { it.split(':')[1].toDouble() }
+                    FanData(
+                        values[0],
+                        values[1],
+                        values[2]
+                    )
+                }
+
+                "power" -> {
+                    val values = entry.value.map { it.split(':')[1].toDouble() }
+                    PowerData(
+                        values[0],
+                        values.getOrNull(1)
+                            ?: Int.MAX_VALUE
+                    )
+                }
+
+                else -> StringData(entry.value.joinToString(", "))
             }
-            "fan" -> {
-                val values = entry.value.map { it.split(':')[1].toDouble() }
-                FanData(
-                    values[0],
-                    values[1],
-                    values[2]
-                )
-            }
-            "power" -> {
-                val values = entry.value.map { it.split(':')[1].toDouble() }
-                PowerData(
-                    values[0],
-                    values.getOrNull(1)
-                        ?: Int.MAX_VALUE
-                )
-            }
-            else -> StringData(entry.value.joinToString(", "))
+
+            out[entry.key] = mutableListOf(value)
         }
-
-        out[entry.key] = mutableListOf(value)
+        return out
+    } catch (e: Exception) {
+        println("Sensors not found! To get more data, please install `sensors`.")
+        return emptyMap()
     }
-    return out
 }
 
 fun pciInfo(bus: Int): GPUData {
@@ -299,6 +307,7 @@ fun String.beforeLetter(): String {
 }
 
 fun radeontopInfo(bus: Int): GPUData {
+    try {
     checkInstalled("radeontop")
     val cmd = "radeontop -d - -b $bus -l 1"
     val process = Runtime.getRuntime().exec(cmd)
@@ -342,6 +351,10 @@ fun radeontopInfo(bus: Int): GPUData {
         stat to listOf(vNew)
     }
     return dx3.toMap()
+    } catch (e: Exception) {
+        println("RadeonTop not found! To get more data, please install `radeontop`.")
+        return emptyMap()
+    }
 }
 
 fun GPUData.printData() {
