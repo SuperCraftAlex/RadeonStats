@@ -16,6 +16,12 @@ dependencies {
 
     implementation("com.googlecode.lanterna:lanterna:3.2.0-alpha1")
     implementation("com.google.code.gson:gson:2.10.1")
+
+    val jnaVersion = "5.14.0"
+    // https://mvnrepository.com/artifact/net.java.dev.jna/jna
+    implementation("net.java.dev.jna:jna:$jnaVersion")
+    // https://mvnrepository.com/artifact/net.java.dev.jna/jna-platform
+    implementation("net.java.dev.jna:jna-platform:$jnaVersion")
 }
 
 tasks.test {

@@ -23,11 +23,26 @@ fun TerminalSize.center(size: TerminalSize): TerminalPosition {
 
 fun main(argsIn: Array<String>) {
     val args = parseArgs(argsIn)
+    if ("-h" in args || "--help" in args) {
+        println("Usage: gpuinfo [-m mode]")
+        println("Modes:")
+        println("  default - default mode")
+        println("  headless - headless mode")
+        println("  swing - swing mode")
+        println("  awt - awt mode")
+        println("  jna - jna mode")
+        exitProcess(0)
+    }
+    val mode = args["-m"]?.firstOrNull() ?: "default"
     val screen = TerminalScreen(
-        if ("components" in args)
-            DefaultTerminalFactory().createSwingTerminal()
-        else
-            DefaultTerminalFactory().createTerminal()
+        when (mode) {
+            "default" -> DefaultTerminalFactory().createTerminal()
+            "headless" -> DefaultTerminalFactory().createHeadlessTerminal()
+            "swing" -> DefaultTerminalFactory().createSwingTerminal()
+            "awt" -> DefaultTerminalFactory().createAWTTerminal()
+            "jna" -> DefaultTerminalFactory().createTelnetTerminal()
+            else -> throw IllegalArgumentException("Unknown mode $mode")
+        }
     )
 
     fun exit(code: Int = 0): Nothing {

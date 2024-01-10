@@ -147,9 +147,13 @@ class ToolNotInstalledException(name: String):
     Exception("Tool $name is not installed")
 
 fun checkInstalled(name: String) {
-    val process = Runtime.getRuntime().exec("which $name")
-    process.waitFor()
-    if (process.exitValue() != 0) {
+    try {
+        val process = Runtime.getRuntime().exec("which $name")
+        process.waitFor()
+        if (process.exitValue() != 0) {
+            throw ToolNotInstalledException(name)
+        }
+    } catch (e: Exception) {
         throw ToolNotInstalledException(name)
     }
 }

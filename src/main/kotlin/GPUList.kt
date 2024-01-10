@@ -40,11 +40,15 @@ data class LshwCapabilities(
 )
 
 fun lshwFetch(hwclass: String = "display"): Array<LshwData> {
-    checkInstalled("lshw")
-    val cmd = "lshw -C $hwclass -json"
-    val proc = Runtime.getRuntime().exec(cmd)
-    proc.waitFor()
-    val json = proc.inputStream.bufferedReader().readText()
-    val data = Gson().fromJson(json, Array<LshwData>::class.java)
-    return data
+    try {
+        checkInstalled("lshw")
+        val cmd = "lshw -C $hwclass -json"
+        val proc = Runtime.getRuntime().exec(cmd)
+        proc.waitFor()
+        val json = proc.inputStream.bufferedReader().readText()
+        val data = Gson().fromJson(json, Array<LshwData>::class.java)
+        return data
+    } catch (e: Exception) {
+        return emptyArray()
+    }
 }
