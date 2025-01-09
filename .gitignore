@@ -1,1 +1,3 @@
+build/
+kls_database.db
 .gradle/

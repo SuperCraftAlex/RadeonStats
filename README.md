@@ -9,6 +9,7 @@ The file will be located in `build/libs/`.
 
 ## Runtime Dependencies
 Linux & Radeon:
+- `lshw`
 - `lspci`
 - `radeontop`
 - `sensors`
